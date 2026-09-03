@@ -54,7 +54,7 @@ Clone the repository, inspect the shortcut conflicts, validate the files, and
 install it for the current user:
 
 ```bash
-git clone https://github.com/<YOUR-USERNAME>/gnome-focus-monitor.git
+git clone https://github.com/halfsamoan/gnome-focus-monitor.git
 cd gnome-focus-monitor
 bash check-conflicts.sh
 node --input-type=module --check < focus-monitor@local/extension.js
