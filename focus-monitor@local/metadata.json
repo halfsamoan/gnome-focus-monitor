@@ -1,0 +1,6 @@
+{
+  "uuid": "focus-monitor@local",
+  "name": "Focus Monitor",
+  "description": "Activate the most recently used normal window on the left or right monitor without moving it.",
+  "shell-version": ["50"]
+}
