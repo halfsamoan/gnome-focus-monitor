@@ -1,137 +1,47 @@
 # GNOME Focus Monitor
 
-**Switch keyboard focus between monitors on GNOME Wayland — without moving windows or reaching for the mouse.**
+키보드로 왼쪽·오른쪽 모니터의 창에 포커스를 옮기는 GNOME 확장입니다.
 
-Focus Monitor is a tiny GNOME Shell extension for dual-monitor workflows. It
-activates the most recently used normal application window on the left or right
-monitor, while keeping every window exactly where it is.
-
-This is designed for GNOME Shell 50 on Wayland and works with native Wayland
-applications such as Firefox, GNOME Terminal, and Visual Studio Code. It does
-not use `xdotool`, `wmctrl`, X11 APIs, or a background daemon.
-
-## Shortcuts
-
-| Shortcut | Action |
-| --- | --- |
-| `Shift` + `Super` + `O` | Focus the most recently used app window on the leftmost monitor |
-| `Shift` + `Super` + `P` | Focus the most recently used app window on the rightmost monitor |
-
-“Left” and “right” are determined from the monitors’ Mutter geometry X
-coordinates. Monitor numbers are not assumed to be `0` and `1`.
-
-The target is selected from the current workspace in Mutter’s normal-window
-MRU order. Desktop, dock, panel, notifications, popups, GNOME Shell UI,
-hidden, minimized, unmapped, skipped-taskbar, and non-normal windows are
-ignored.
-
-## Why this exists
-
-GNOME’s built-in monitor switching shortcuts can move focus in ways that are
-not predictable when several windows share a monitor. This extension provides
-two explicit “focus the other screen” keys:
-
-```text
-Firefox (left monitor)  <── Shift+Super+O / Shift+Super+P ──>  Terminal (right monitor)
-```
-
-The extension calls Mutter’s native `Meta.Window.activate()` API. It does not
-move, resize, minimize, or maximize the selected window.
-
-## Requirements
-
-- GNOME Shell 50.x
-- A Wayland session
-- Two or more monitors
-- Bash, `gsettings`, `gnome-extensions`, `node`, and Python 3 for the checks
-
-The code intentionally has no GSettings schema, so there is no
-`gschemas.compiled` file to install and no schema lookup failure to diagnose.
+현재 작업 공간에서 해당 모니터의 최근 사용 창을 선택합니다. 창 위치와 크기는 그대로 유지합니다.
 
 ## Install
 
-Clone the repository, inspect the shortcut conflicts, validate the files, and
-install it for the current user:
+GNOME Shell 50의 Wayland 세션과 여러 모니터가 필요합니다. 저장소 루트에서 단축키 충돌을 살펴본 뒤 설치합니다.
 
-```bash
-git clone https://github.com/halfsamoan/gnome-focus-monitor.git
-cd gnome-focus-monitor
+```sh
 bash check-conflicts.sh
-node --input-type=module --check < focus-monitor@local/extension.js
-python3 -m json.tool focus-monitor@local/metadata.json >/dev/null
 bash install.sh
 ```
 
-On Wayland, GNOME Shell cannot be restarted in place. Log out and log back in
-after the first installation or after changing the extension code. Then verify:
+## Quickstart
 
-```bash
-gnome-extensions info focus-monitor@local
-journalctl --user -b _COMM=gnome-shell --since '2 minutes ago' \
-  | grep -E 'focus-monitor|schema.*could not|JavaScript Error'
-```
+첫 설치 후 로그아웃하고 다시 로그인합니다.
 
-If `grep` prints no matching error, the command exits with a non-zero status;
-that is normal. `rg` is optional and is not required by this project.
+| 단축키 | 동작 |
+|---|---|
+| `Shift + Super + O` | 가장 왼쪽 모니터의 최근 사용 창 선택 |
+| `Shift + Super + P` | 가장 오른쪽 모니터의 최근 사용 창 선택 |
 
-## Uninstall / rollback
+모니터 번호 대신 실제 화면 배치를 기준으로 좌우를 판단합니다.
 
-From the cloned repository:
+## 창 선택
 
-```bash
+- **현재 작업 공간:** 다른 작업 공간의 창으로 이동하지 않습니다.
+- **일반 앱 창:** 최소화·숨김 상태나 패널·도크·알림 창을 제외합니다.
+- **빈 모니터:** 선택 가능한 창이 없으면 현재 포커스를 유지합니다.
+
+상주 프로세스와 주기적 폴링 없이 단축키를 누를 때 창 목록을 읽습니다. GNOME Shell 50 이외의 버전은 지원 범위에 포함하지 않습니다.
+
+## 제거
+
+저장소 루트에서 실행합니다.
+
+```sh
 bash rollback.sh
 ```
 
-This disables the extension, removes only `focus-monitor@local` from GNOME’s
-enabled-extension list, and deletes the exact per-user extension directory.
-It does not modify system packages or the rest of the GNOME configuration.
-
-## Performance and design
-
-- No polling or timers
-- No background process
-- No continuous D-Bus calls
-- One Mutter accelerator signal while enabled
-- Monitor geometry and the current-workspace MRU list are read only when a
-  shortcut is pressed
-- No window movement or X11/XWayland dependency
-
-## Known limitations
-
-- The extension intentionally targets GNOME Shell 50 only.
-- If the target monitor has no selectable normal window on the current
-  workspace, the shortcut does nothing.
-- “Most recently used” follows Mutter’s normal-window tab list; it is not a
-  separately maintained history database.
-- The shortcuts must be available to Mutter. Run `bash check-conflicts.sh` before
-  installation.
-
-## Development checks
-
-```bash
-bash -n check-conflicts.sh install.sh rollback.sh
-node --input-type=module --check < focus-monitor@local/extension.js
-python3 -m json.tool focus-monitor@local/metadata.json >/dev/null
-```
-
-## Contributing
-
-Bug reports and pull requests are welcome. Include:
-
-- GNOME Shell version
-- Wayland/X11 session type
-- monitor layout and scaling
-- the relevant `journalctl --user -b _COMM=gnome-shell` output
-- whether the target app is on the current workspace
-
-Please do not include private window titles or other personal data in logs.
+[설치 진단·개발 검증](CONTRIBUTING.md)
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
-
-## Search keywords
-
-GNOME Shell extension, GNOME 50, Ubuntu 26.04, Wayland, dual monitor,
-multi-monitor, keyboard focus, focus window, switch monitor, native Wayland,
-Firefox, GNOME Terminal, VS Code, xdotool alternative, wmctrl alternative.
+[MIT](LICENSE).
