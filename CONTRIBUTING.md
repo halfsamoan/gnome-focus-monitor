@@ -1,131 +1,48 @@
-# 개발·검증 참고
+# Installation diagnostics and validation
 
-[프로젝트 소개](README.md)
+## Prerequisites
 
-기존 README의 상세 실행·검증 내용을 이 문서로 옮겼습니다. 과거 실행 기록은 당시 환경의 결과이며 새 검증 결과를 뜻하지 않습니다.
+Requires GNOME Shell 50 on Wayland, multiple monitors, Bash, `gsettings`, and `gnome-extensions`. Node.js and Python 3 are used by the source checks.
 
-## Shortcuts
+## Source checks
 
-| Shortcut | Action |
-| --- | --- |
-| `Shift` + `Super` + `O` | Focus the most recently used app window on the leftmost monitor |
-| `Shift` + `Super` + `P` | Focus the most recently used app window on the rightmost monitor |
-
-“Left” and “right” are determined from the monitors’ Mutter geometry X
-coordinates. Monitor numbers are not assumed to be `0` and `1`.
-
-The target is selected from the current workspace in Mutter’s normal-window
-MRU order. Desktop, dock, panel, notifications, popups, GNOME Shell UI,
-hidden, minimized, unmapped, skipped-taskbar, and non-normal windows are
-ignored.
-
-## Why this exists
-
-GNOME’s built-in monitor switching shortcuts can move focus in ways that are
-not predictable when several windows share a monitor. This extension provides
-two explicit “focus the other screen” keys:
-
-```text
-Firefox (left monitor)  <── Shift+Super+O / Shift+Super+P ──>  Terminal (right monitor)
+```sh
+bash -n check-conflicts.sh install.sh rollback.sh
+node --input-type=module --check < focus-monitor@local/extension.js
+python3 -m json.tool focus-monitor@local/metadata.json
 ```
 
-The extension calls Mutter’s native `Meta.Window.activate()` API. It does not
-move, resize, minimize, or maximize the selected window.
+These commands check syntax and metadata only. They do not establish compatibility with a running Mutter/GNOME session.
 
-## Requirements
+## Installation
 
-- GNOME Shell 50.x
-- A Wayland session
-- Two or more monitors
-- Bash, `gsettings`, `gnome-extensions`, `node`, and Python 3 for the checks
-
-The code intentionally has no GSettings schema, so there is no
-`gschemas.compiled` file to install and no schema lookup failure to diagnose.
-
-## Install
-
-Clone the repository, inspect the shortcut conflicts, validate the files, and
-install it for the current user:
-
-```bash
-git clone https://github.com/halfsamoan/gnome-focus-monitor.git
-cd gnome-focus-monitor
+```sh
 bash check-conflicts.sh
-node --input-type=module --check < focus-monitor@local/extension.js
-python3 -m json.tool focus-monitor@local/metadata.json >/dev/null
 bash install.sh
 ```
 
-On Wayland, GNOME Shell cannot be restarted in place. Log out and log back in
-after the first installation or after changing the extension code. Then verify:
+Log out and back in, then inspect the installed extension:
 
-```bash
+```sh
 gnome-extensions info focus-monitor@local
-journalctl --user -b _COMM=gnome-shell --since '2 minutes ago' \
-  | grep -E 'focus-monitor|schema.*could not|JavaScript Error'
 ```
 
-If `grep` prints no matching error, the command exits with a non-zero status;
-that is normal. `rg` is optional and is not required by this project.
+GNOME Shell on Wayland does not reload extension code merely because its files were replaced. Use a new login session after code changes.
 
-## Uninstall / rollback
+## Selection contract
 
-From the cloned repository:
+`Shift + Super + O` targets the leftmost monitor; `Shift + Super + P` targets the rightmost. Monitor geometry supplies left/right ordering. The target is the most recently used eligible normal window on the current workspace according to Mutter's tab list.
 
-```bash
+Desktop, dock, panel, notification, popup, hidden, minimized, unmapped, skipped-taskbar, and non-normal windows are excluded. With no eligible target, the extension does nothing. It does not maintain a separate focus-history database.
+
+## Remove or roll back
+
+```sh
 bash rollback.sh
 ```
 
-This disables the extension, removes only `focus-monitor@local` from GNOME’s
-enabled-extension list, and deletes the exact per-user extension directory.
-It does not modify system packages or the rest of the GNOME configuration.
+The script disables the extension and removes its own per-user installation without changing other enabled extensions or system packages.
 
-## Performance and design
+## Target-session validation
 
-- No polling or timers
-- No background process
-- No continuous D-Bus calls
-- One Mutter accelerator signal while enabled
-- Monitor geometry and the current-workspace MRU list are read only when a
-  shortcut is pressed
-- No window movement or X11/XWayland dependency
-
-## Known limitations
-
-- The extension intentionally targets GNOME Shell 50 only.
-- If the target monitor has no selectable normal window on the current
-  workspace, the shortcut does nothing.
-- “Most recently used” follows Mutter’s normal-window tab list; it is not a
-  separately maintained history database.
-- The shortcuts must be available to Mutter. Run `bash check-conflicts.sh` before
-  installation.
-
-## Development checks
-
-```bash
-bash -n check-conflicts.sh install.sh rollback.sh
-node --input-type=module --check < focus-monitor@local/extension.js
-python3 -m json.tool focus-monitor@local/metadata.json >/dev/null
-```
-
-## Contributing
-
-Bug reports and pull requests are welcome. Include:
-
-- GNOME Shell version
-- Wayland/X11 session type
-- monitor layout and scaling
-- the relevant `journalctl --user -b _COMM=gnome-shell` output
-- whether the target app is on the current workspace
-
-Please do not include private window titles or other personal data in logs.
-
-## License
-
-MIT. See [LICENSE](LICENSE).
-
-## Search keywords
-
-GNOME Shell extension, GNOME 50, Ubuntu 26.04, Wayland, dual monitor,
-multi-monitor, keyboard focus, focus window, switch monitor, native Wayland,
-Firefox, GNOME Terminal, VS Code, xdotool alternative, wmctrl alternative.
+Test monitor order, workspace changes, empty target monitors, shortcut conflicts, and scaling on GNOME Shell 50. When reporting a failure, include the Shell version, session type, monitor layout, and relevant extension error lines. Exclude private window titles and unrelated desktop logs.

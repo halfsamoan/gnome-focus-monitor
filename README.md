@@ -1,46 +1,43 @@
 # GNOME Focus Monitor
 
-키보드로 왼쪽·오른쪽 모니터의 창에 포커스를 옮기는 GNOME 확장입니다.
+A GNOME Shell extension that switches keyboard focus between monitors without moving windows.
 
-현재 작업 공간에서 해당 모니터의 최근 사용 창을 선택합니다. 창 위치와 크기는 그대로 유지합니다.
+## Implementation
+
+- Selects the most recently used eligible application window on the leftmost or rightmost monitor.
+- Derives monitor order from Mutter geometry rather than assuming display indices.
+- Restricts selection to the current workspace and excludes minimized, hidden, unmapped, and non-application windows.
+- Reads the current window list only when a shortcut is pressed, using Mutter's native activation API without a background daemon or polling loop.
+
+[Window selection and activation](focus-monitor@local/extension.js)
 
 ## Install
 
-GNOME Shell 50의 Wayland 세션과 여러 모니터가 필요합니다. 저장소 루트에서 단축키 충돌을 살펴본 뒤 설치합니다.
+Requires GNOME Shell 50, a Wayland session, and multiple monitors. From the repository root:
 
 ```sh
 bash check-conflicts.sh
 bash install.sh
 ```
 
-## Quickstart
+Log out and back in after installation or changes to the extension code.
 
-첫 설치 후 로그아웃하고 다시 로그인합니다.
+## Keyboard shortcuts
 
-| 단축키 | 동작 |
+| Shortcut | Action |
 |---|---|
-| `Shift + Super + O` | 가장 왼쪽 모니터의 최근 사용 창 선택 |
-| `Shift + Super + P` | 가장 오른쪽 모니터의 최근 사용 창 선택 |
+| `Shift + Super + O` | Focus the most recently used window on the leftmost monitor |
+| `Shift + Super + P` | Focus the most recently used window on the rightmost monitor |
 
-모니터 번호 대신 실제 화면 배치를 기준으로 좌우를 판단합니다.
+If the target monitor has no eligible window, focus stays where it is. GNOME versions other than Shell 50 are outside the declared support range.
 
-## 창 선택
-
-- **현재 작업 공간:** 다른 작업 공간의 창으로 이동하지 않습니다.
-- **일반 앱 창:** 최소화·숨김 상태나 패널·도크·알림 창을 제외합니다.
-- **빈 모니터:** 선택 가능한 창이 없으면 현재 포커스를 유지합니다.
-
-상주 프로세스와 주기적 폴링 없이 단축키를 누를 때 창 목록을 읽습니다. GNOME Shell 50 이외의 버전은 지원 범위에 포함하지 않습니다.
-
-## 제거
-
-저장소 루트에서 실행합니다.
+## Remove
 
 ```sh
 bash rollback.sh
 ```
 
-[설치 진단·개발 검증](CONTRIBUTING.md)
+[Installation diagnostics and validation](CONTRIBUTING.md)
 
 ## License
 
